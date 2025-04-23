@@ -24,7 +24,6 @@
       <p>Are you seeking housing for just yourself?</p>
       <label><input type="radio" name="household_alone" value="yes"> Yes</label>
       <label><input type="radio" name="household_alone" value="no"> No</label>
-
       <div id="household-type-section">
         <label for="household_type">Select your household type:</label>
         <select id="household_type" name="household_type">
@@ -35,13 +34,21 @@
           <option value="other">Other</option>
         </select>
       </div>
-
       <div id="children-details">
         <label for="num_children">Number of children:</label>
         <input type="number" id="num_children" name="num_children" min="1">
         <label for="children_ages">Children's ages (comma-separated):</label>
         <input type="text" id="children_ages" name="children_ages" placeholder="e.g. 4,7,10">
       </div>
+    </fieldset>
+
+    <!-- Demographics -->
+    <fieldset>
+      <legend>Demographics</legend>
+      <p>What is your gender?</p>
+      <label><input type="radio" name="gender" value="male"> Male</label>
+      <label><input type="radio" name="gender" value="female"> Female</label>
+      <label><input type="radio" name="gender" value="other"> Other</label>
     </fieldset>
 
     <!-- Health & Income -->
@@ -60,13 +67,13 @@
         <label><input type="radio" name="mental_illness_chronic" value="no"> No</label>
       </div>
       <label><input type="checkbox" name="medical_assistance"> Are you seeking medical assistance?</label>
+      <label><input type="checkbox" name="veteran"> Are you a military veteran?</label>
     </fieldset>
 
     <!-- Special Populations -->
     <fieldset>
       <legend>Special Populations</legend>
       <label><input type="checkbox" name="reentry"> Transitioning from incarceration?</label>
-      <label><input type="checkbox" name="veteran"> Are you a military veteran?</label>
       <label><input type="checkbox" name="survivor"> Fleeing domestic violence or trafficking?</label>
     </fieldset>
 
@@ -103,49 +110,63 @@
     // Initialize hidden sections
     ['household-type-section','children-details','income-section','mental-chronic-section'].forEach(id => document.getElementById(id).style.display = 'none');
 
-    // Define shelters with address
+    // Define shelter resources with gender and veteran criteria
     const resources = [
       {
         name: 'Refuge Enrichment Home',
         phone: '336-725-6161',
         address: '2321 N Patterson Ave, Winston-Salem, NC 27105',
         rationale: 'Counseling and pre-/post-natal care for young expectant mothers.',
-        criteria: a => a.pregnant === 'on'
+        criteria: a => a.pregnant === 'on' && a.gender === 'female'
       },
       {
         name: 'The Salvation Army',
         phone: '336-722-8721',
-        address: '1255 Trade St NW, Winston-Salem, NC 27101 and 2850 New Walkertown Rd, Winston-Salem, NC 27105',
-        rationale: 'Wrap-around case management and family shelter.',
-        criteria: a => a.household_type === 'adult_children' || a.household_type === 'family'
+        address: '1255 Trade St NW, Winston-Salem, NC 27101; 2850 New Walkertown Rd, Winston-Salem, NC 27105',
+        rationale: 'Wrap-around case management and shelter for women and families.',
+        criteria: a => (a.household_type === 'adult_children' || a.household_type === 'family') || (a.gender === 'female' && a.household_alone === 'yes')
       },
       {
         name: 'The Bethesda Center',
         phone: '336-722-9951',
         address: '930 Patterson Ave, Winston-Salem, NC 27101',
-        rationale: 'Day/night shelter open to single adults with flexible check-in.',
+        rationale: 'Day/night shelter open to single adults of any gender.',
         criteria: a => a.household_alone === 'yes'
+      },
+      {
+        name: 'Winston-Salem Rescue Mission',
+        phone: '336-723-1848',
+        address: '718 Trade St NW, Winston-Salem, NC 27101',
+        rationale: '24-hour emergency shelter for homeless men with food, clothing, and work therapy.',
+        criteria: a => a.gender === 'male'
+      },
+      {
+        name: 'Samaritan Ministries',
+        phone: '336-748-1962',
+        address: '414 E NW Blvd, Winston-Salem, NC 27105',
+        rationale: 'Temporary shelter with meals and showers for men.',
+        criteria: a => a.gender === 'male'
       },
       {
         name: 'City with Dwellings',
         phone: '(336) 790-9766',
         address: '502 N Broad St, Winston-Salem, NC 27101',
-        rationale: 'Community-first programs often with veteran support.',
-        criteria: a => a.veteran === 'on'
+        rationale: 'Community-first programs offering housing support to all individuals.',
+        criteria: () => true
       },
       {
         name: 'Empowerment Project',
         phone: '336-748-1962',
         address: '414 E NW Blvd, Winston-Salem, NC 27101',
-        rationale: 'Outreach and housing stability for chronic mental illness.',
+        rationale: 'Outreach and support for those with chronic mental illness.',
         criteria: a => a.mental_illness === 'on' && a.mental_illness_chronic === 'yes'
       },
       {
         name: 'The Wells Center for Women in Transition',
         phone: '336-261-6893',
         address: '100 W Sprague St, Winston-Salem, NC 27127',
-        rationale: 'Transitional housing support for those coming out of incarceration.',
-        criteria: a => a.reentry === 'on'
+        rationale: 'Transitional housing support for women coming out of incarceration.',
+        criteria: a => a.reentry === 'on' && a.gender === 'female'
       },
       {
         name: 'SECU Family House',
@@ -167,6 +188,13 @@
         address: 'Not provided',
         rationale: 'Low-barrier housing for those chronically unhoused.',
         criteria: a => parseInt(a.homeless_duration) >= 6 && parseInt(a.episodes) >= 2
+      },
+      {
+        name: 'Veterans Helping Veterans Heal',
+        phone: '336-744-1313',
+        address: '3614 Glenn Ave NE, Winston-Salem, NC 27105',
+        rationale: 'Peer-led veteran support programs and housing services.',
+        criteria: a => a.veteran === 'on'
       }
     ];
 
@@ -175,6 +203,7 @@
       e.preventDefault();
       const fd = new FormData(this);
       const answers = Object.fromEntries(fd.entries());
+      // Ensure default values for unchecked checkboxes and radios
       const matched = resources.filter(r => r.criteria(answers));
       const results = document.getElementById('results');
       if (matched.length) {
