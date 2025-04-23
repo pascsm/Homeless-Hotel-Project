@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Winston-Salem Homeless Services Intake</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    fieldset { margin-bottom: 15px; padding: 10px; }
+    label { display: block; margin: 5px 0; }
+    #results { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    .resource { margin-bottom: 10px; }
+    .resource h3 { margin: 0; }
+  </style>
 </head>
 <body>
   <h1>Winston-Salem Homeless Services Intake</h1>
@@ -12,7 +20,6 @@
     <!-- Household Information -->
     <fieldset>
       <legend>Household Information</legend>
-
       <p>Are you seeking housing for just yourself?</p>
       <label><input type="radio" name="household_alone" value="yes"> Yes</label>
       <label><input type="radio" name="household_alone" value="no"> No</label>
@@ -31,7 +38,6 @@
       <div id="children-details">
         <label for="num_children">Number of children:</label>
         <input type="number" id="num_children" name="num_children" min="1">
-
         <label for="children_ages">Children's ages (comma-separated):</label>
         <input type="text" id="children_ages" name="children_ages" placeholder="e.g. 4,7,10">
       </div>
@@ -40,43 +46,49 @@
     <!-- Health & Income -->
     <fieldset>
       <legend>Health & Income</legend>
-
       <label><input type="checkbox" name="pregnant"> Are you pregnant?</label>
-
       <label><input type="checkbox" name="employed" id="employed"> Are you currently employed?</label>
       <div id="income-section">
         <label for="monthly_income">If employed, what is your monthly income?</label>
         <input type="number" id="monthly_income" name="monthly_income" min="0" step="50">
       </div>
-
       <label><input type="checkbox" name="mental_illness" id="mental_illness"> Do you have a mental health condition?</label>
       <div id="mental-chronic-section">
         <p>If yes, is it chronic?</p>
         <label><input type="radio" name="mental_illness_chronic" value="yes"> Yes</label>
         <label><input type="radio" name="mental_illness_chronic" value="no"> No</label>
       </div>
-
       <label><input type="checkbox" name="medical_assistance"> Are you seeking medical assistance?</label>
     </fieldset>
 
     <!-- Special Populations -->
     <fieldset>
       <legend>Special Populations</legend>
-
       <label><input type="checkbox" name="reentry"> Transitioning from incarceration?</label>
       <label><input type="checkbox" name="veteran"> Are you a military veteran?</label>
+      <label><input type="checkbox" name="survivor"> Fleeing domestic violence or trafficking?</label>
+    </fieldset>
+
+    <!-- History -->
+    <fieldset>
+      <legend>Homelessness History</legend>
+      <label for="homeless_duration">How long have you been unhoused (months)?</label>
+      <input type="number" id="homeless_duration" name="homeless_duration" min="0">
+      <label for="episodes">Episodes of homelessness in past 2 years:</label>
+      <input type="number" id="episodes" name="episodes" min="0">
     </fieldset>
 
     <button type="submit">Review Inputs & Recommend Resources</button>
   </form>
 
+  <div id="results"></div>
+
   <script>
-    // Show/hide logic for conditional fields
+    // Conditional UI
     document.getElementsByName('household_alone').forEach(el => el.addEventListener('change', () => {
-      const showType = document.querySelector('input[name="household_alone"]:checked').value === 'no';
-      document.getElementById('household-type-section').style.display = showType ? 'block' : 'none';
-      const showKids = showType && document.getElementById('household_type').value === 'adult_children';
-      document.getElementById('children-details').style.display = showKids ? 'block' : 'none';
+      const alone = document.querySelector('input[name="household_alone"]:checked')?.value;
+      document.getElementById('household-type-section').style.display = alone === 'no' ? 'block' : 'none';
+      document.getElementById('children-details').style.display = (alone === 'no' && document.getElementById('household_type').value === 'adult_children') ? 'block' : 'none';
     }));
     document.getElementById('household_type').addEventListener('change', () => {
       document.getElementById('children-details').style.display = document.getElementById('household_type').value === 'adult_children' ? 'block' : 'none';
@@ -87,8 +99,84 @@
     document.getElementById('mental_illness').addEventListener('change', () => {
       document.getElementById('mental-chronic-section').style.display = document.getElementById('mental_illness').checked ? 'block' : 'none';
     });
-    // Initialize hidden sections
     ['household-type-section','children-details','income-section','mental-chronic-section'].forEach(id => document.getElementById(id).style.display = 'none');
+
+    // Resource definitions
+    const resources = [
+      {
+        name: 'Refuge Enrichment Home',
+        phone: '336-725-6161',
+        rationale: 'Counseling and pre-/post-natal care for young expectant mothers.',
+        criteria: a => a.pregnant === 'on'
+      },
+      {
+        name: 'The Salvation Army',
+        phone: '336-722-8721',
+        rationale: 'Wrap-around case management and family shelter.',
+        criteria: a => a.household_type === 'adult_children' || a.household_type === 'family'
+      },
+      {
+        name: 'The Bethesda Center',
+        phone: '336-722-9951',
+        rationale: 'Day/night shelter open to single adults with flexible check-in.',
+        criteria: a => a.household_alone === 'yes'
+      },
+      {
+        name: 'City with Dwellings',
+        phone: '(336) 790-9766',
+        rationale: 'Community-first programs often with veteran support.',
+        criteria: a => a.veteran === 'on'
+      },
+      {
+        name: 'Empowerment Project',
+        phone: '336-748-1962',
+        rationale: 'Outreach and housing stability for chronic mental illness.',
+        criteria: a => a.mental_illness === 'on' && a.mental_illness_chronic === 'yes'
+      },
+      {
+        name: 'The Wells Center for Women in Transition',
+        phone: '336-261-6893',
+        rationale: 'Transitional housing support for those coming out of incarceration.',
+        criteria: a => a.reentry === 'on'
+      },
+      {
+        name: 'SECU Family House',
+        phone: '336-793-2822',
+        rationale: 'Affordable lodging for medical patients and caregivers.',
+        criteria: a => a.medical_assistance === 'on'
+      },
+      {
+        name: 'Family Service of the Piedmont',
+        phone: '336-889-6161',
+        rationale: 'Domestic violence advocacy and family stabilization programs.',
+        criteria: a => a.survivor === 'on'
+      },
+      {
+        name: 'Experiment in Self Reliance',
+        phone: '336-722-9400',
+        rationale: 'Low-barrier housing for those chronically unhoused.',
+        criteria: a => parseInt(a.homeless_duration) >= 6 && parseInt(a.episodes) >= 2
+      }
+    ];
+
+    // Form handling
+    document.getElementById('intake-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const answers = Object.fromEntries(fd.entries());
+      const matched = resources.filter(r => r.criteria(answers));
+      const results = document.getElementById('results');
+      if (matched.length) {
+        results.innerHTML = '<h2>Recommended Resources</h2>' + matched.map(r => 
+          `<div class='resource'>
+             <h3>${r.name}</h3>
+             <p><strong>Phone:</strong> ${r.phone}</p>
+             <p><em>${r.rationale}</em></p>
+           </div>`).join('');
+      } else {
+        results.innerHTML = '<p>No direct matches. Please contact case management for other options.</p>';
+      }
+    });
   </script>
 </body>
 </html>
