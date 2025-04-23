@@ -67,13 +67,13 @@
         <label><input type="radio" name="mental_illness_chronic" value="no"> No</label>
       </div>
       <label><input type="checkbox" name="medical_assistance"> Are you seeking medical assistance?</label>
-      <label><input type="checkbox" name="veteran"> Are you a military veteran?</label>
     </fieldset>
 
     <!-- Special Populations -->
     <fieldset>
       <legend>Special Populations</legend>
       <label><input type="checkbox" name="reentry"> Transitioning from incarceration?</label>
+      <label><input type="checkbox" name="veteran"> Are you a military veteran?</label>
       <label><input type="checkbox" name="survivor"> Fleeing domestic violence or trafficking?</label>
     </fieldset>
 
@@ -110,7 +110,7 @@
     // Initialize hidden sections
     ['household-type-section','children-details','income-section','mental-chronic-section'].forEach(id => document.getElementById(id).style.display = 'none');
 
-    // Define shelter resources with gender and veteran criteria
+    // Define shelter resources with criteria
     const resources = [
       {
         name: 'Refuge Enrichment Home',
@@ -151,7 +151,7 @@
         name: 'City with Dwellings',
         phone: '(336) 790-9766',
         address: '502 N Broad St, Winston-Salem, NC 27101',
-        rationale: 'Community-first programs offering housing support to all individuals.',
+        rationale: 'Community-first programs offering housing support to all.',
         criteria: () => true
       },
       {
@@ -203,7 +203,6 @@
       e.preventDefault();
       const fd = new FormData(this);
       const answers = Object.fromEntries(fd.entries());
-      // Ensure default values for unchecked checkboxes and radios
       const matched = resources.filter(r => r.criteria(answers));
       const results = document.getElementById('results');
       if (matched.length) {
